@@ -3,27 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>pw-e-commerce</title>
+  <title>Chronos Premium</title>
 </head>
 <body>
   <header>
-    <h1>pw-e-commerce</h1>
-    <nav>
-      <a href="#">Inicio</a>
-      <a href="#">Productos</a>
-      <a href="#">Carrito</a>
+    <h1>Chronos Premium</h1>
+
+    <nav aria-label="Navegación principal">
+      <a href="#inicio">Inicio</a>
+      <a href="#coleccion">Colección</a>
+      <a href="#beneficios">Beneficios</a>
+      <a href="#contacto">Contacto</a>
     </nav>
   </header>
 
   <main>
-    <section>
-      <h2>Bienvenido</h2>
-      <p>Esta es la página inicial del proyecto de Programación Web.</p>
+    <section id="inicio">
+      <h2>Relojes que reflejan elegancia y carácter</h2>
+      <p>
+        Descubrí una colección exclusiva de relojes diseñados para quienes valoran
+        el detalle, la precisión y el estilo atemporal.
+      </p>
+      <button type="button">Ver colección</button>
+    </section>
+
+    <section id="coleccion">
+      <h2>Colección destacada</h2>
+
+      <article>
+        <h3>Chronos Royal Gold</h3>
+        <p>Reloj analógico con terminaciones doradas y diseño clásico premium.</p>
+        <p>Precio: USD 420</p>
+        <button type="button">Agregar al carrito</button>
+      </article>
+
+      <article>
+        <h3>Chronos Noir Edition</h3>
+        <p>Modelo negro mate con estética moderna y presencia sofisticada.</p>
+        <p>Precio: USD 390</p>
+        <button type="button">Agregar al carrito</button>
+      </article>
+
+      <article>
+        <h3>Chronos Heritage Steel</h3>
+        <p>Reloj de acero inoxidable con inspiración tradicional y acabado refinado.</p>
+        <p>Precio: USD 450</p>
+        <button type="button">Agregar al carrito</button>
+      </article>
+    </section>
+
+    <section id="beneficios">
+      <h2>Por qué elegir Chronos Premium</h2>
+
+      <article>
+        <h3>Materiales de alta calidad</h3>
+        <p>Trabajamos con acero, cuero y cristales resistentes para garantizar durabilidad.</p>
+      </article>
+
+      <article>
+        <h3>Garantía oficial</h3>
+        <p>Todos nuestros relojes cuentan con garantía y respaldo postventa.</p>
+      </article>
+
+      <article>
+        <h3>Envíos seguros</h3>
+        <p>Realizamos envíos protegidos para que tu compra llegue en excelentes condiciones.</p>
+      </article>
+    </section>
+
+    <section id="contacto">
+      <h2>Recibí novedades exclusivas</h2>
+      <p>Dejanos tu email para enterarte de nuevos lanzamientos y ediciones limitadas.</p>
+
+      <form>
+        <label for="email">Email</label>
+        <input id="email" type="email" placeholder="tuemail@ejemplo.com">
+
+        <button type="submit">Suscribirme</button>
+      </form>
     </section>
   </main>
 
   <footer>
-    <p>Proyecto integrador</p>
+    <p>Chronos Premium - Elegancia en cada segundo.</p>
   </footer>
 </body>
 </html>
