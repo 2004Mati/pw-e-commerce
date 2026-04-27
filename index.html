@@ -4,88 +4,206 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chronos Premium</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Chronos Premium</h1>
+  <header class="header">
+    <div class="container header-contenido">
+      <h1 class="logo">CHRONOS</h1>
 
-    <nav aria-label="Navegación principal">
-      <a href="#inicio">Inicio</a>
-      <a href="#coleccion">Colección</a>
-      <a href="#beneficios">Beneficios</a>
-      <a href="#contacto">Contacto</a>
-    </nav>
+      <nav class="nav" aria-label="Navegación principal">
+        <a href="#inicio">Inicio</a>
+        <a href="#coleccion">Colección</a>
+        <a href="#beneficios">Beneficios</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+
+      <div class="carrito-resumen">
+        Carrito: <span id="contador-carrito">0</span>
+      </div>
+    </div>
   </header>
 
   <main>
-    <section id="inicio">
-      <h2>Relojes que reflejan elegancia y carácter</h2>
-      <p>
-        Descubrí una colección exclusiva de relojes diseñados para quienes valoran
-        el detalle, la precisión y el estilo atemporal.
-      </p>
-      <button type="button">Ver colección</button>
+    <section id="inicio" class="hero">
+      <div class="container hero-contenido">
+        <p class="etiqueta">Colección exclusiva 2026</p>
+        <h2>Relojes premium con diseño, carácter y precisión</h2>
+        <p class="hero-texto">
+          Explorá una línea de relojes pensada para quienes buscan elegancia, presencia y detalles que marquen diferencia en cada ocasión.
+        </p>
+        <a class="boton" href="#coleccion">Explorar colección</a>
+      </div>
     </section>
 
-    <section id="coleccion">
-      <h2>Colección destacada</h2>
+    <section id="coleccion" class="seccion coleccion">
+      <div class="container">
+        <div class="titulo-seccion">
+          <p class="subtitulo">Modelos destacados</p>
+          <h2>Nuestra colección</h2>
+        </div>
 
-      <article>
-        <h3>Chronos Royal Gold</h3>
-        <p>Reloj analógico con terminaciones doradas y diseño clásico premium.</p>
-        <p>Precio: USD 420</p>
-        <button type="button">Agregar al carrito</button>
-      </article>
+        <div class="grid-productos">
+          <article class="card-producto">
+            <img
+              class="imagen-producto"
+              src="Reloj 1.png"
+              alt="Reloj Chronos Skeleton Heritage con correa de cuero marrón y mecanismo visible">
+            <h3>Chronos Skeleton Heritage</h3>
+            <p class="descripcion">
+              Pieza clásica con esfera skeleton visible, caja pulida y correa de cuero marrón para un estilo sofisticado y tradicional.
+            </p>
+            <p class="precio">USD 520</p>
+            <button
+              type="button"
+              class="boton agregar-carrito"
+              data-id="skeleton-heritage"
+              data-nombre="Chronos Skeleton Heritage"
+              data-precio="520">
+              Agregar al carrito
+            </button>
+          </article>
 
-      <article>
-        <h3>Chronos Noir Edition</h3>
-        <p>Modelo negro mate con estética moderna y presencia sofisticada.</p>
-        <p>Precio: USD 390</p>
-        <button type="button">Agregar al carrito</button>
-      </article>
+          <article class="card-producto">
+            <img
+              class="imagen-producto"
+              src="Reloj 2.png"
+              alt="Reloj Chronos Noir Black completamente negro con diseño minimalista">
+            <h3>Chronos Noir Black</h3>
+            <p class="descripcion">
+              Modelo total black con líneas minimalistas y estética sobria, ideal para quienes prefieren una presencia moderna y elegante.
+            </p>
+            <p class="precio">USD 390</p>
+            <button
+              type="button"
+              class="boton agregar-carrito"
+              data-id="noir-black"
+              data-nombre="Chronos Noir Black"
+              data-precio="390">
+              Agregar al carrito
+            </button>
+          </article>
 
-      <article>
-        <h3>Chronos Heritage Steel</h3>
-        <p>Reloj de acero inoxidable con inspiración tradicional y acabado refinado.</p>
-        <p>Precio: USD 450</p>
-        <button type="button">Agregar al carrito</button>
-      </article>
+          <article class="card-producto">
+            <img
+              class="imagen-producto"
+              src="Reloj 3.png"
+              alt="Reloj Chronos Royal Chronograph dorado con esfera oscura y correa azul">
+            <h3>Chronos Royal Chronograph</h3>
+            <p class="descripcion">
+              Cronógrafo premium con caja dorada, esfera oscura y correa azul. Un modelo con gran personalidad y terminación de lujo.
+            </p>
+            <p class="precio">USD 470</p>
+            <button
+              type="button"
+              class="boton agregar-carrito"
+              data-id="royal-chronograph"
+              data-nombre="Chronos Royal Chronograph"
+              data-precio="470">
+              Agregar al carrito
+            </button>
+          </article>
+
+          <article class="card-producto">
+            <img
+              class="imagen-producto"
+              src="Reloj 4.png"
+              alt="Reloj Chronos Royal Gold bicolor en acero plateado y dorado">
+            <h3>Chronos Royal Gold</h3>
+            <p class="descripcion">
+              Diseño bicolor en acero plateado y dorado con esfera clara y calendario, pensado para un look refinado y atemporal.
+            </p>
+            <p class="precio">USD 450</p>
+            <button
+              type="button"
+              class="boton agregar-carrito"
+              data-id="royal-gold"
+              data-nombre="Chronos Royal Gold"
+              data-precio="450">
+              Agregar al carrito
+            </button>
+          </article>
+        </div>
+
+        <p id="mensaje-carrito" class="mensaje"></p>
+
+        <section class="carrito-panel" aria-labelledby="titulo-carrito">
+          <div class="carrito-header">
+            <h3 id="titulo-carrito">Carrito de compras</h3>
+            <button type="button" id="vaciar-carrito" class="boton-secundario">Vaciar carrito</button>
+          </div>
+
+          <div id="carrito-contenido" class="carrito-contenido">
+            <p class="carrito-vacio">Todavía no agregaste productos.</p>
+          </div>
+
+          <div class="carrito-footer">
+            <p>Total de productos: <span id="total-productos">0</span></p>
+            <p>Total estimado: <span id="total-precio">USD 0</span></p>
+          </div>
+        </section>
+      </div>
     </section>
 
-    <section id="beneficios">
-      <h2>Por qué elegir Chronos Premium</h2>
+    <section id="beneficios" class="seccion beneficios">
+      <div class="container">
+        <div class="titulo-seccion">
+          <p class="subtitulo">Por qué elegirnos</p>
+          <h2>Experiencia Chronos</h2>
+        </div>
 
-      <article>
-        <h3>Materiales de alta calidad</h3>
-        <p>Trabajamos con acero, cuero y cristales resistentes para garantizar durabilidad.</p>
-      </article>
+        <div class="grid-beneficios">
+          <article class="card-beneficio">
+            <h3>Diseño premium</h3>
+            <p>Modelos creados para transmitir elegancia, identidad y presencia en cada detalle.</p>
+          </article>
 
-      <article>
-        <h3>Garantía oficial</h3>
-        <p>Todos nuestros relojes cuentan con garantía y respaldo postventa.</p>
-      </article>
+          <article class="card-beneficio">
+            <h3>Materiales de calidad</h3>
+            <p>Acero, cuero y terminaciones refinadas para una experiencia duradera y confiable.</p>
+          </article>
 
-      <article>
-        <h3>Envíos seguros</h3>
-        <p>Realizamos envíos protegidos para que tu compra llegue en excelentes condiciones.</p>
-      </article>
+          <article class="card-beneficio">
+            <h3>Envíos seguros</h3>
+            <p>Protección en cada entrega para que tu compra llegue en excelente estado.</p>
+          </article>
+
+          <article class="card-beneficio">
+            <h3>Garantía oficial</h3>
+            <p>Respaldo postventa para que compres con más confianza y tranquilidad.</p>
+          </article>
+        </div>
+      </div>
     </section>
 
-    <section id="contacto">
-      <h2>Recibí novedades exclusivas</h2>
-      <p>Dejanos tu email para enterarte de nuevos lanzamientos y ediciones limitadas.</p>
+    <section id="contacto" class="seccion contacto">
+      <div class="container contacto-contenido">
+        <div>
+          <p class="subtitulo">Novedades exclusivas</p>
+          <h2>Sumate a Chronos Premium</h2>
+          <p>
+            Dejanos tu email para enterarte de lanzamientos, nuevas colecciones y promociones especiales.
+          </p>
+        </div>
 
-      <form>
-        <label for="email">Email</label>
-        <input id="email" type="email" placeholder="tuemail@ejemplo.com">
+        <form id="form-suscripcion" class="formulario">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="tuemail@ejemplo.com" required>
+          <button type="submit" class="boton">Suscribirme</button>
+        </form>
 
-        <button type="submit">Suscribirme</button>
-      </form>
+        <p id="mensaje-formulario" class="mensaje"></p>
+      </div>
     </section>
   </main>
 
-  <footer>
-    <p>Chronos Premium - Elegancia en cada segundo.</p>
+  <footer class="footer">
+    <div class="container footer-contenido">
+      <p>Chronos Premium — Elegancia en cada segundo.</p>
+      <p>Proyecto académico de Programación Web.</p>
+    </div>
   </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>
