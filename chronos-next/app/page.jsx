@@ -1,10 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { benefits, products } from "../data/products";
+import { useEffect, useMemo, useState } from "react";
+import { benefits } from "../data/products";
+import { supabase } from "../lib/supabase";
 
-function Header({ cartCount }) {
+function UserIcon() {
+  return (
+    <svg className="header-icono" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M4 22C4.8 17.8 7.7 15.5 12 15.5C16.3 15.5 19.2 17.8 20 22"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CartIcon() {
+  return (
+    <svg className="header-icono" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M3 3H5.2L7.4 14.2C7.6 15.2 8.5 16 9.6 16H18.3C19.3 16 20.2 15.3 20.5 14.3L22 8H6.2"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 21C10.5523 21 11 20.5523 11 20C11 19.4477 10.5523 19 10 19C9.44772 19 9 19.4477 9 20C9 20.5523 9.44772 21 10 21Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M18 21C18.5523 21 19 20.5523 19 20C19 19.4477 18.5523 19 18 19C17.4477 19 17 19.4477 17 20C17 20.5523 17.4477 21 18 21Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+function Header({ cartCount, userInitial, onOpenCart }) {
   return (
     <header className="header">
       <div className="container header-contenido">
@@ -16,10 +59,29 @@ function Header({ cartCount }) {
           <a href="#beneficios">Beneficios</a>
           <a href="#contacto">Contacto</a>
           <Link href="/catalogo">Catálogo</Link>
+          <Link href="/mis-compras">Mis compras</Link>
         </nav>
 
-        <div className="carrito-resumen">
-          Carrito: <span>{cartCount}</span>
+        <div className="header-acciones">
+          {userInitial ? (
+            <Link href="/auth/login" className="usuario-circulo" aria-label="Ver cuenta">
+              {userInitial}
+            </Link>
+          ) : (
+            <Link href="/auth/login" className="icono-header-boton" aria-label="Iniciar sesión">
+              <UserIcon />
+            </Link>
+          )}
+
+          <button
+            type="button"
+            className="icono-header-boton carrito-icono-boton"
+            onClick={onOpenCart}
+            aria-label="Abrir carrito"
+          >
+            <CartIcon />
+            {cartCount > 0 && <span className="carrito-badge">{cartCount}</span>}
+          </button>
         </div>
       </div>
     </header>
@@ -40,78 +102,122 @@ function ProductCard({ product, onAdd }) {
   );
 }
 
-function CartPanel({
+function CartDrawer({
+  isOpen,
   cartItems,
   totalItems,
   totalPrice,
+  checkoutMessage,
+  checkoutLoading,
   onIncrease,
   onDecrease,
   onDelete,
-  onClear
+  onClear,
+  onCheckout,
+  onClose
 }) {
+  if (!isOpen) return null;
+
   return (
-    <section className="carrito-panel" aria-labelledby="titulo-carrito">
-      <div className="carrito-header">
-        <h3 id="titulo-carrito">Carrito de compras</h3>
-        <button type="button" className="boton-secundario" onClick={onClear}>
-          Vaciar carrito
-        </button>
-      </div>
+    <div className="drawer-overlay" onClick={onClose}>
+      <aside
+        className="carrito-drawer"
+        aria-label="Carrito de compras"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="drawer-header">
+          <div>
+            <p className="subtitulo drawer-subtitulo">Tu selección</p>
+            <h2>Carrito</h2>
+          </div>
 
-      <div className="carrito-contenido">
-        {cartItems.length === 0 ? (
-          <p className="carrito-vacio">Todavía no agregaste productos.</p>
-        ) : (
-          cartItems.map((product) => {
-            const subtotal = product.price * product.quantity;
+          <button type="button" className="drawer-cerrar" onClick={onClose} aria-label="Cerrar carrito">
+            ×
+          </button>
+        </div>
 
-            return (
-              <div className="item-carrito" key={product.id}>
-                <div className="item-info">
-                  <h4>{product.name}</h4>
-                  <p>USD {product.price}</p>
+        <div className="drawer-contenido">
+          {cartItems.length === 0 ? (
+            <p className="carrito-vacio">Todavía no agregaste productos al carrito.</p>
+          ) : (
+            cartItems.map((product) => {
+              const subtotal = product.price * product.quantity;
+
+              return (
+                <div className="drawer-item" key={product.id}>
+                  <div className="drawer-item-info">
+                    <h3>{product.name}</h3>
+                    <p>USD {product.price}</p>
+                  </div>
+
+                  <div className="drawer-item-controles">
+                    <div className="item-cantidad">
+                      <button
+                        type="button"
+                        className="boton-cantidad"
+                        onClick={() => onDecrease(product.id)}
+                      >
+                        -
+                      </button>
+                      <span>{product.quantity}</span>
+                      <button
+                        type="button"
+                        className="boton-cantidad"
+                        onClick={() => onIncrease(product.id)}
+                      >
+                        +
+                      </button>
+                    </div>
+
+                    <strong>USD {subtotal}</strong>
+
+                    <button
+                      type="button"
+                      className="boton-eliminar"
+                      onClick={() => onDelete(product.id)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
+              );
+            })
+          )}
+        </div>
 
-                <div className="item-cantidad">
-                  <button
-                    type="button"
-                    className="boton-cantidad"
-                    onClick={() => onDecrease(product.id)}
-                  >
-                    -
-                  </button>
-                  <span>{product.quantity}</span>
-                  <button
-                    type="button"
-                    className="boton-cantidad"
-                    onClick={() => onIncrease(product.id)}
-                  >
-                    +
-                  </button>
-                </div>
+        <div className="drawer-footer">
+          <div className="drawer-totales">
+            <p>
+              Total de productos: <span>{totalItems}</span>
+            </p>
+            <p>
+              Total estimado: <span>USD {totalPrice}</span>
+            </p>
+          </div>
 
-                <div className="item-subtotal">USD {subtotal}</div>
+          {checkoutMessage && <p className="mensaje mensaje-exito">{checkoutMessage}</p>}
 
-                <div>
-                  <button
-                    type="button"
-                    className="boton-eliminar"
-                    onClick={() => onDelete(product.id)}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+          <div className="drawer-botones">
+            <button type="button" className="boton-secundario" onClick={onClear}>
+              Vaciar carrito
+            </button>
 
-      <div className="carrito-footer">
-        <p>Total de productos: <span>{totalItems}</span></p>
-        <p>Total estimado: <span>USD {totalPrice}</span></p>
-      </div>
-    </section>
+            <button
+              type="button"
+              className="boton"
+              onClick={onCheckout}
+              disabled={checkoutLoading || cartItems.length === 0}
+            >
+              {checkoutLoading ? "Procesando..." : "Finalizar compra"}
+            </button>
+          </div>
+
+          <button type="button" className="boton-secundario drawer-boton-cerrar" onClick={onClose}>
+            Cerrar
+          </button>
+        </div>
+      </aside>
+    </div>
   );
 }
 
@@ -212,7 +318,7 @@ function Footer() {
     <footer className="footer">
       <div className="container footer-contenido">
         <p>Chronos Premium — Elegancia en cada segundo.</p>
-        <p>Proyecto académico de Programación Web.</p>
+        <p>Diseño, precisión y estilo.</p>
       </div>
     </footer>
   );
@@ -221,6 +327,126 @@ function Footer() {
 export default function HomePage() {
   const [cart, setCart] = useState({});
   const [cartMessage, setCartMessage] = useState("");
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [productsMessage, setProductsMessage] = useState("");
+  const [userInitial, setUserInitial] = useState("");
+  const [userId, setUserId] = useState("");
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [checkoutMessage, setCheckoutMessage] = useState("");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadProducts() {
+      const { data, error } = await supabase
+        .from("productos")
+        .select("*")
+        .order("id", { ascending: true });
+
+      if (error) {
+        setProductsMessage("No se pudieron cargar los productos.");
+        setLoadingProducts(false);
+        return;
+      }
+
+      const formattedProducts = data.map((product) => ({
+        id: String(product.id),
+        name: product.nombre,
+        description: product.descripcion,
+        price: Number(product.precio),
+        image: product.imagen_url,
+        alt: `Reloj ${product.nombre}`
+      }));
+
+      setProducts(formattedProducts);
+      setLoadingProducts(false);
+    }
+
+    loadProducts();
+  }, []);
+
+  async function loadCartFromSupabase(currentUserId) {
+    const { data, error } = await supabase
+      .from("carrito")
+      .select(
+        `
+        id,
+        cantidad,
+        producto_id,
+        productos (
+          id,
+          nombre,
+          descripcion,
+          precio,
+          imagen_url
+        )
+      `
+      )
+      .eq("usuario_id", currentUserId)
+      .order("id", { ascending: true });
+
+    if (error) {
+      showCartMessage("No se pudo cargar el carrito.");
+      return;
+    }
+
+    const cartObject = {};
+
+    data.forEach((item) => {
+      if (!item.productos) return;
+
+      cartObject[String(item.producto_id)] = {
+        cartRowId: item.id,
+        id: String(item.producto_id),
+        name: item.productos.nombre,
+        description: item.productos.descripcion,
+        price: Number(item.productos.precio),
+        image: item.productos.imagen_url,
+        alt: `Reloj ${item.productos.nombre}`,
+        quantity: item.cantidad
+      };
+    });
+
+    setCart(cartObject);
+  }
+
+  useEffect(() => {
+    async function loadSession() {
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+
+      if (session?.user?.id && session?.user?.email) {
+        setUserId(session.user.id);
+        setUserInitial(session.user.email.charAt(0).toUpperCase());
+        await loadCartFromSupabase(session.user.id);
+      } else {
+        setUserId("");
+        setUserInitial("");
+        setCart({});
+      }
+    }
+
+    loadSession();
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.id && session?.user?.email) {
+        setUserId(session.user.id);
+        setUserInitial(session.user.email.charAt(0).toUpperCase());
+        loadCartFromSupabase(session.user.id);
+      } else {
+        setUserId("");
+        setUserInitial("");
+        setCart({});
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   function showCartMessage(text) {
     setCartMessage(text);
@@ -229,65 +455,142 @@ export default function HomePage() {
     }, 2000);
   }
 
-  function addToCart(product) {
-    setCart((prevCart) => {
-      const existingProduct = prevCart[product.id];
+  function showCheckoutMessage(text) {
+    setCheckoutMessage(text);
+    setTimeout(() => {
+      setCheckoutMessage("");
+    }, 3000);
+  }
 
-      if (existingProduct) {
-        return {
-          ...prevCart,
-          [product.id]: {
-            ...existingProduct,
-            quantity: existingProduct.quantity + 1
-          }
-        };
+  async function addToCart(product) {
+    if (!userId) {
+      window.location.href = "/auth/login";
+      return;
+    }
+
+    const existingProduct = cart[product.id];
+
+    if (existingProduct) {
+      const newQuantity = existingProduct.quantity + 1;
+
+      const { error } = await supabase
+        .from("carrito")
+        .update({ cantidad: newQuantity })
+        .eq("id", existingProduct.cartRowId);
+
+      if (error) {
+        showCartMessage("No se pudo actualizar el carrito.");
+        return;
       }
 
-      return {
+      setCart((prevCart) => ({
+        ...prevCart,
+        [product.id]: {
+          ...existingProduct,
+          quantity: newQuantity
+        }
+      }));
+    } else {
+      const { data, error } = await supabase
+        .from("carrito")
+        .insert({
+          usuario_id: userId,
+          producto_id: Number(product.id),
+          cantidad: 1
+        })
+        .select("id")
+        .single();
+
+      if (error) {
+        showCartMessage("No se pudo agregar el producto.");
+        return;
+      }
+
+      setCart((prevCart) => ({
         ...prevCart,
         [product.id]: {
           ...product,
+          cartRowId: data.id,
           quantity: 1
         }
-      };
-    });
+      }));
+    }
 
     showCartMessage("Producto agregado al carrito.");
   }
 
-  function increaseQuantity(productId) {
+  async function increaseQuantity(productId) {
+    const currentProduct = cart[productId];
+
+    if (!currentProduct) return;
+
+    const newQuantity = currentProduct.quantity + 1;
+
+    const { error } = await supabase
+      .from("carrito")
+      .update({ cantidad: newQuantity })
+      .eq("id", currentProduct.cartRowId);
+
+    if (error) {
+      showCartMessage("No se pudo actualizar la cantidad.");
+      return;
+    }
+
     setCart((prevCart) => ({
       ...prevCart,
       [productId]: {
-        ...prevCart[productId],
-        quantity: prevCart[productId].quantity + 1
+        ...currentProduct,
+        quantity: newQuantity
       }
     }));
   }
 
-  function decreaseQuantity(productId) {
-    setCart((prevCart) => {
-      const currentProduct = prevCart[productId];
+  async function decreaseQuantity(productId) {
+    const currentProduct = cart[productId];
 
-      if (!currentProduct) return prevCart;
+    if (!currentProduct) return;
 
-      if (currentProduct.quantity === 1) {
-        const updatedCart = { ...prevCart };
-        delete updatedCart[productId];
-        return updatedCart;
+    if (currentProduct.quantity === 1) {
+      await deleteProduct(productId);
+      return;
+    }
+
+    const newQuantity = currentProduct.quantity - 1;
+
+    const { error } = await supabase
+      .from("carrito")
+      .update({ cantidad: newQuantity })
+      .eq("id", currentProduct.cartRowId);
+
+    if (error) {
+      showCartMessage("No se pudo actualizar la cantidad.");
+      return;
+    }
+
+    setCart((prevCart) => ({
+      ...prevCart,
+      [productId]: {
+        ...currentProduct,
+        quantity: newQuantity
       }
-
-      return {
-        ...prevCart,
-        [productId]: {
-          ...currentProduct,
-          quantity: currentProduct.quantity - 1
-        }
-      };
-    });
+    }));
   }
 
-  function deleteProduct(productId) {
+  async function deleteProduct(productId) {
+    const currentProduct = cart[productId];
+
+    if (!currentProduct) return;
+
+    const { error } = await supabase
+      .from("carrito")
+      .delete()
+      .eq("id", currentProduct.cartRowId);
+
+    if (error) {
+      showCartMessage("No se pudo eliminar el producto.");
+      return;
+    }
+
     setCart((prevCart) => {
       const updatedCart = { ...prevCart };
       delete updatedCart[productId];
@@ -295,9 +598,92 @@ export default function HomePage() {
     });
   }
 
-  function clearCart() {
+  async function clearCart() {
+    if (!userId) {
+      setCart({});
+      return;
+    }
+
+    const { error } = await supabase.from("carrito").delete().eq("usuario_id", userId);
+
+    if (error) {
+      showCartMessage("No se pudo vaciar el carrito.");
+      return;
+    }
+
     setCart({});
     showCartMessage("Carrito vaciado.");
+  }
+
+  async function finalizePurchase() {
+    const cartItems = Object.values(cart);
+
+    if (!userId) {
+      window.location.href = "/auth/login";
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      showCheckoutMessage("El carrito está vacío.");
+      return;
+    }
+
+    setCheckoutLoading(true);
+    setCheckoutMessage("");
+
+    const total = cartItems.reduce(
+      (acc, product) => acc + product.price * product.quantity,
+      0
+    );
+
+    const { data: orden, error: ordenError } = await supabase
+      .from("ordenes")
+      .insert({
+        usuario_id: userId,
+        total,
+        estado: "confirmada"
+      })
+      .select("id")
+      .single();
+
+    if (ordenError) {
+      setCheckoutLoading(false);
+      showCheckoutMessage("No se pudo crear la orden.");
+      return;
+    }
+
+    const itemsOrden = cartItems.map((product) => ({
+      orden_id: orden.id,
+      producto_id: Number(product.id),
+      cantidad: product.quantity,
+      precio_unitario: product.price,
+      subtotal: product.price * product.quantity
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("orden_items")
+      .insert(itemsOrden);
+
+    if (itemsError) {
+      setCheckoutLoading(false);
+      showCheckoutMessage("No se pudieron guardar los productos de la orden.");
+      return;
+    }
+
+    const { error: carritoError } = await supabase
+      .from("carrito")
+      .delete()
+      .eq("usuario_id", userId);
+
+    if (carritoError) {
+      setCheckoutLoading(false);
+      showCheckoutMessage("La compra se creó, pero no se pudo vaciar el carrito.");
+      return;
+    }
+
+    setCart({});
+    setCheckoutLoading(false);
+    showCheckoutMessage("Compra realizada correctamente.");
   }
 
   const cartItems = Object.values(cart);
@@ -315,7 +701,11 @@ export default function HomePage() {
 
   return (
     <>
-      <Header cartCount={totalItems} />
+      <Header
+        cartCount={totalItems}
+        userInitial={userInitial}
+        onOpenCart={() => setIsCartOpen(true)}
+      />
 
       <main>
         <section id="inicio" className="hero">
@@ -339,27 +729,19 @@ export default function HomePage() {
               <h2>Nuestra colección</h2>
             </div>
 
-            <div className="grid-productos">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAdd={addToCart}
-                />
-              ))}
-            </div>
+            {loadingProducts ? (
+              <p className="mensaje">Cargando productos...</p>
+            ) : productsMessage ? (
+              <p className="mensaje mensaje-error">{productsMessage}</p>
+            ) : (
+              <div className="grid-productos">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} onAdd={addToCart} />
+                ))}
+              </div>
+            )}
 
             <p className="mensaje">{cartMessage}</p>
-
-            <CartPanel
-              cartItems={cartItems}
-              totalItems={totalItems}
-              totalPrice={totalPrice}
-              onIncrease={increaseQuantity}
-              onDecrease={decreaseQuantity}
-              onDelete={deleteProduct}
-              onClear={clearCart}
-            />
           </div>
         </section>
 
@@ -368,6 +750,21 @@ export default function HomePage() {
       </main>
 
       <Footer />
+
+      <CartDrawer
+        isOpen={isCartOpen}
+        cartItems={cartItems}
+        totalItems={totalItems}
+        totalPrice={totalPrice}
+        checkoutMessage={checkoutMessage}
+        checkoutLoading={checkoutLoading}
+        onIncrease={increaseQuantity}
+        onDecrease={decreaseQuantity}
+        onDelete={deleteProduct}
+        onClear={clearCart}
+        onCheckout={finalizePurchase}
+        onClose={() => setIsCartOpen(false)}
+      />
     </>
   );
 }
