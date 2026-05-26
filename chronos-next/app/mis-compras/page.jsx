@@ -15,41 +15,33 @@ export default function MisComprasPage() {
         data: { session }
       } = await supabase.auth.getSession();
 
-      if (!session?.user) {
+      if (!session?.access_token) {
         window.location.href = "/auth/login";
         return;
       }
 
-      const { data, error } = await supabase
-        .from("ordenes")
-        .select(
-          `
-          id,
-          total,
-          estado,
-          creado_en,
-          orden_items (
-            id,
-            cantidad,
-            precio_unitario,
-            subtotal,
-            productos (
-              nombre,
-              imagen_url
-            )
-          )
-        `
-        )
-        .order("creado_en", { ascending: false });
+      try {
+        const response = await fetch("/api/ordenes", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        });
 
-      if (error) {
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          setMessage(result.error || "No se pudieron cargar tus compras.");
+          setLoading(false);
+          return;
+        }
+
+        setOrdenes(result.data || []);
+        setLoading(false);
+      } catch (error) {
         setMessage("No se pudieron cargar tus compras.");
         setLoading(false);
-        return;
       }
-
-      setOrdenes(data || []);
-      setLoading(false);
     }
 
     loadCompras();
@@ -152,7 +144,7 @@ export default function MisComprasPage() {
                       gap: "12px"
                     }}
                   >
-                    {orden.orden_items?.map((item) => (
+                    {orden.items?.map((item) => (
                       <div
                         key={item.id}
                         style={{
@@ -167,8 +159,8 @@ export default function MisComprasPage() {
                         }}
                       >
                         <img
-                          src={item.productos?.imagen_url}
-                          alt={`Reloj ${item.productos?.nombre}`}
+                          src={item.producto?.imagen_url}
+                          alt={`Reloj ${item.producto?.nombre}`}
                           style={{
                             width: "70px",
                             height: "70px",
@@ -179,7 +171,7 @@ export default function MisComprasPage() {
 
                         <div>
                           <h4 style={{ color: "#fff" }}>
-                            {item.productos?.nombre}
+                            {item.producto?.nombre}
                           </h4>
                           <p style={{ color: "#d2c9bb" }}>
                             Cantidad: {item.cantidad} | Precio unitario: USD{" "}

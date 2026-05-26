@@ -338,28 +338,22 @@ export default function HomePage() {
 
   useEffect(() => {
     async function loadProducts() {
-      const { data, error } = await supabase
-        .from("productos")
-        .select("*")
-        .order("id", { ascending: true });
+      try {
+        const response = await fetch("/api/productos");
+        const result = await response.json();
 
-      if (error) {
+        if (!response.ok || !result.success) {
+          setProductsMessage(result.error || "No se pudieron cargar los productos.");
+          setLoadingProducts(false);
+          return;
+        }
+
+        setProducts(result.data);
+        setLoadingProducts(false);
+      } catch (error) {
         setProductsMessage("No se pudieron cargar los productos.");
         setLoadingProducts(false);
-        return;
       }
-
-      const formattedProducts = data.map((product) => ({
-        id: String(product.id),
-        name: product.nombre,
-        description: product.descripcion,
-        price: Number(product.precio),
-        image: product.imagen_url,
-        alt: `Reloj ${product.nombre}`
-      }));
-
-      setProducts(formattedProducts);
-      setLoadingProducts(false);
     }
 
     loadProducts();
@@ -468,55 +462,52 @@ export default function HomePage() {
       return;
     }
 
-    const existingProduct = cart[product.id];
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
 
-    if (existingProduct) {
-      const newQuantity = existingProduct.quantity + 1;
+    if (!session?.access_token) {
+      window.location.href = "/auth/login";
+      return;
+    }
 
-      const { error } = await supabase
-        .from("carrito")
-        .update({ cantidad: newQuantity })
-        .eq("id", existingProduct.cartRowId);
-
-      if (error) {
-        showCartMessage("No se pudo actualizar el carrito.");
-        return;
-      }
-
-      setCart((prevCart) => ({
-        ...prevCart,
-        [product.id]: {
-          ...existingProduct,
-          quantity: newQuantity
-        }
-      }));
-    } else {
-      const { data, error } = await supabase
-        .from("carrito")
-        .insert({
-          usuario_id: userId,
+    try {
+      const response = await fetch("/api/carrito", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
           producto_id: Number(product.id),
           cantidad: 1
         })
-        .select("id")
-        .single();
+      });
 
-      if (error) {
-        showCartMessage("No se pudo agregar el producto.");
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        showCartMessage(result.error || "No se pudo agregar el producto.");
         return;
       }
 
+      const item = result.data.item;
+      const producto = result.data.producto;
+
       setCart((prevCart) => ({
         ...prevCart,
-        [product.id]: {
-          ...product,
-          cartRowId: data.id,
-          quantity: 1
+        [String(item.producto_id)]: {
+          ...producto,
+          id: String(item.producto_id),
+          cartRowId: item.id,
+          quantity: Number(item.cantidad)
         }
       }));
-    }
 
-    showCartMessage("Producto agregado al carrito.");
+      showCartMessage("Producto agregado al carrito.");
+    } catch (error) {
+      showCartMessage("No se pudo agregar el producto.");
+    }
   }
 
   async function increaseQuantity(productId) {
@@ -628,62 +619,41 @@ export default function HomePage() {
       return;
     }
 
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      window.location.href = "/auth/login";
+      return;
+    }
+
     setCheckoutLoading(true);
     setCheckoutMessage("");
 
-    const total = cartItems.reduce(
-      (acc, product) => acc + product.price * product.quantity,
-      0
-    );
+    try {
+      const response = await fetch("/api/ordenes", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
 
-    const { data: orden, error: ordenError } = await supabase
-      .from("ordenes")
-      .insert({
-        usuario_id: userId,
-        total,
-        estado: "confirmada"
-      })
-      .select("id")
-      .single();
+      const result = await response.json();
 
-    if (ordenError) {
+      if (!response.ok || !result.success) {
+        setCheckoutLoading(false);
+        showCheckoutMessage(result.error || "No se pudo finalizar la compra.");
+        return;
+      }
+
+      setCart({});
       setCheckoutLoading(false);
-      showCheckoutMessage("No se pudo crear la orden.");
-      return;
-    }
-
-    const itemsOrden = cartItems.map((product) => ({
-      orden_id: orden.id,
-      producto_id: Number(product.id),
-      cantidad: product.quantity,
-      precio_unitario: product.price,
-      subtotal: product.price * product.quantity
-    }));
-
-    const { error: itemsError } = await supabase
-      .from("orden_items")
-      .insert(itemsOrden);
-
-    if (itemsError) {
+      showCheckoutMessage("Compra realizada correctamente.");
+    } catch (error) {
       setCheckoutLoading(false);
-      showCheckoutMessage("No se pudieron guardar los productos de la orden.");
-      return;
+      showCheckoutMessage("No se pudo finalizar la compra.");
     }
-
-    const { error: carritoError } = await supabase
-      .from("carrito")
-      .delete()
-      .eq("usuario_id", userId);
-
-    if (carritoError) {
-      setCheckoutLoading(false);
-      showCheckoutMessage("La compra se creó, pero no se pudo vaciar el carrito.");
-      return;
-    }
-
-    setCart({});
-    setCheckoutLoading(false);
-    showCheckoutMessage("Compra realizada correctamente.");
   }
 
   const cartItems = Object.values(cart);

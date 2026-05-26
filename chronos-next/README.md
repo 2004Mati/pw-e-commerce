@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chronos Premium
 
-## Getting Started
+Chronos Premium es un e-commerce académico de relojes premium desarrollado para la materia Programación Web.
 
-First, run the development server:
+El proyecto simula una tienda online con catálogo de productos, autenticación de usuarios, carrito persistente, órdenes de compra e historial de compras usando Next.js y Supabase.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## URL pública
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+https://pw-e-commerce-orcin.vercel.app
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Tecnologías utilizadas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js
+- React
+- JavaScript
+- CSS
+- Supabase
+- PostgreSQL
+- Supabase Auth
+- GitHub
+- Vercel
 
-## Learn More
+## Funcionalidades principales
 
-To learn more about Next.js, take a look at the following resources:
+### Landing page
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+La página principal presenta la marca Chronos, una colección de relojes premium, beneficios comerciales y un formulario de contacto/suscripción.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Catálogo de productos
 
-## Deploy on Vercel
+Los productos se cargan desde Supabase, usando una tabla `productos`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Cada producto incluye:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- nombre
+- descripción
+- precio
+- stock
+- imagen
+- categoría
+
+### Autenticación
+
+El proyecto incluye autenticación con Supabase Auth:
+
+- registro de usuario
+- inicio de sesión
+- cierre de sesión
+- detección de sesión activa
+
+Si el usuario está logueado, se muestra su inicial en el header.
+
+### Perfil de usuario
+
+Cada usuario puede completar datos de perfil:
+
+- nombre
+- apellido
+- teléfono
+- dirección
+
+Estos datos se guardan en la tabla `usuarios`, vinculada al usuario autenticado de Supabase.
+
+### Carrito persistente
+
+El carrito está asociado al usuario autenticado.
+
+Permite:
+
+- agregar productos
+- aumentar cantidad
+- disminuir cantidad
+- eliminar productos
+- vaciar carrito
+- conservar el carrito aunque se recargue la página
+
+La información se guarda en la tabla `carrito`.
+
+### Finalización de compra
+
+El usuario puede finalizar la compra desde el panel lateral del carrito.
+
+Al finalizar:
+
+- se crea una orden en la tabla `ordenes`
+- se guardan los productos comprados en `orden_items`
+- se vacía el carrito
+- se muestra un mensaje de confirmación
+
+### Mis compras
+
+La ruta `/mis-compras` muestra el historial de compras del usuario autenticado.
+
+Cada usuario solo puede ver sus propias órdenes.
+
+## Tablas principales en Supabase
+
+### productos
+
+Guarda los relojes disponibles en el catálogo.
+
+### carrito
+
+Guarda los productos agregados al carrito por cada usuario.
+
+### ordenes
+
+Guarda cada compra finalizada.
+
+### orden_items
+
+Guarda los productos incluidos en cada orden.
+
+### usuarios
+
+Guarda datos adicionales del perfil del usuario.
+
+## Seguridad
+
+El proyecto usa Row Level Security en Supabase para proteger los datos de cada usuario.
+
+Cada usuario solo puede acceder a:
+
+- su propio carrito
+- sus propias órdenes
+- sus propios datos de perfil
+
+## Variables de entorno
+
+Para correr el proyecto se necesitan las siguientes variables:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
