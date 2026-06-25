@@ -113,27 +113,56 @@ export default function MisComprasPage() {
                       <h3 style={{ color: "#fff", marginBottom: "6px" }}>
                         Orden #{orden.id}
                       </h3>
+
                       <p style={{ color: "#d2c9bb" }}>
                         Estado:{" "}
                         <strong style={{ color: "#d4af37" }}>
                           {orden.estado}
                         </strong>
                       </p>
+
+                      {orden.estado === "pendiente" && (
+                        <p
+                          style={{
+                            color: "#d2c9bb",
+                            marginTop: "8px"
+                          }}
+                        >
+                          Esta orden está pendiente de pago.
+                        </p>
+                      )}
                     </div>
 
                     <div style={{ textAlign: "right" }}>
                       <p style={{ color: "#d2c9bb" }}>
                         {new Date(orden.creado_en).toLocaleString("es-AR")}
                       </p>
+
                       <p
                         style={{
                           color: "#d4af37",
                           fontWeight: "bold",
-                          fontSize: "1.2rem"
+                          fontSize: "1.2rem",
+                          marginTop: "6px"
                         }}
                       >
                         Total: USD {Number(orden.total)}
                       </p>
+
+                      {orden.estado === "pendiente" && (
+                        <Link
+                          href={`/checkout?orden_id=${orden.id}`}
+                          className="boton"
+                          style={{
+                            display: "inline-block",
+                            marginTop: "14px",
+                            padding: "12px 24px",
+                            fontSize: "0.95rem"
+                          }}
+                        >
+                          Pagar
+                        </Link>
+                      )}
                     </div>
                   </div>
 
@@ -173,6 +202,7 @@ export default function MisComprasPage() {
                           <h4 style={{ color: "#fff" }}>
                             {item.producto?.nombre}
                           </h4>
+
                           <p style={{ color: "#d2c9bb" }}>
                             Cantidad: {item.cantidad} | Precio unitario: USD{" "}
                             {Number(item.precio_unitario)}

@@ -87,6 +87,9 @@ export async function GET(request) {
         total,
         estado,
         creado_en,
+        metodo_pago,
+        referencia_pago,
+        pagado_en,
         orden_items (
           id,
           producto_id,
@@ -118,6 +121,9 @@ export async function GET(request) {
       total: Number(orden.total),
       estado: orden.estado,
       creado_en: orden.creado_en,
+      metodo_pago: orden.metodo_pago,
+      referencia_pago: orden.referencia_pago,
+      pagado_en: orden.pagado_en,
       items: orden.orden_items.map((item) => ({
         id: item.id,
         producto_id: item.producto_id,
@@ -183,6 +189,8 @@ export async function POST(request) {
       return errorResponse("El carrito está vacío.", "EMPTY_CART", 400);
     }
 
+    const items = [];
+
     for (const item of carrito) {
       if (!item.productos) {
         return errorResponse(
@@ -192,7 +200,10 @@ export async function POST(request) {
         );
       }
 
-      if (Number(item.cantidad) <= 0) {
+      const cantidad = Number(item.cantidad);
+      const stock = Number(item.productos.stock);
+
+      if (!Number.isInteger(cantidad) || cantidad <= 0) {
         return errorResponse(
           "El carrito contiene una cantidad inválida.",
           "INVALID_QUANTITY",
@@ -200,74 +211,56 @@ export async function POST(request) {
         );
       }
 
-      if (Number(item.productos.stock) < Number(item.cantidad)) {
+      if (stock < cantidad) {
         return errorResponse(
           `Stock insuficiente para ${item.productos.nombre}.`,
           "INSUFFICIENT_STOCK",
           400
         );
       }
+
+      items.push({
+        producto_id: Number(item.producto_id),
+        cantidad
+      });
     }
 
     const total = carrito.reduce((acc, item) => {
       return acc + Number(item.productos.precio) * Number(item.cantidad);
     }, 0);
 
-    const { data: orden, error: ordenError } = await supabase
-      .from("ordenes")
-      .insert({
-        usuario_id: user.id,
-        total,
-        estado: "confirmada"
-      })
-      .select("id, usuario_id, total, estado, creado_en")
-      .single();
+    const { data: resultado, error: rpcError } = await supabase.rpc(
+      "crear_orden_completa",
+      {
+        p_usuario_id: user.id,
+        p_items: items,
+        p_total: total
+      }
+    );
 
-    if (ordenError) {
+    if (rpcError) {
       return errorResponse(
-        "No se pudo crear la orden.",
-        "ORDER_CREATE_ERROR",
+        "No se pudo ejecutar la transacción de la orden.",
+        "ORDER_TRANSACTION_ERROR",
         500
       );
     }
 
-    const ordenItems = carrito.map((item) => ({
-      orden_id: orden.id,
-      producto_id: Number(item.producto_id),
-      cantidad: Number(item.cantidad),
-      precio_unitario: Number(item.productos.precio),
-      subtotal: Number(item.productos.precio) * Number(item.cantidad)
-    }));
+    const respuesta = resultado?.[0];
 
-    const { error: itemsError } = await supabase
-      .from("orden_items")
-      .insert(ordenItems);
-
-    if (itemsError) {
+    if (!respuesta || !respuesta.success) {
       return errorResponse(
-        "La orden se creó, pero no se pudieron guardar sus productos.",
-        "ORDER_ITEMS_CREATE_ERROR",
-        500
-      );
-    }
-
-    const { error: limpiarCarritoError } = await supabase
-      .from("carrito")
-      .delete()
-      .eq("usuario_id", user.id);
-
-    if (limpiarCarritoError) {
-      return errorResponse(
-        "La compra se creó, pero no se pudo vaciar el carrito.",
-        "CART_CLEAR_ERROR",
-        500
+        respuesta?.error_msg || "No se pudo finalizar la compra.",
+        "ORDER_TRANSACTION_FAILED",
+        400
       );
     }
 
     return successResponse(
       {
-        orden,
-        items: ordenItems
+        orden_id: respuesta.orden_id,
+        total,
+        estado: "pendiente"
       },
       201
     );

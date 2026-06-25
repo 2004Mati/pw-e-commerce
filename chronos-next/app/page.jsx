@@ -47,7 +47,7 @@ function CartIcon() {
   );
 }
 
-function Header({ cartCount, userInitial, onOpenCart }) {
+function Header({ cartCount, userInitial, userRole, onOpenCart }) {
   return (
     <header className="header">
       <div className="container header-contenido">
@@ -60,6 +60,8 @@ function Header({ cartCount, userInitial, onOpenCart }) {
           <a href="#contacto">Contacto</a>
           <Link href="/catalogo">Catálogo</Link>
           <Link href="/mis-compras">Mis compras</Link>
+
+          {userRole === "admin" && <Link href="/admin">Admin</Link>}
         </nav>
 
         <div className="header-acciones">
@@ -332,6 +334,7 @@ export default function HomePage() {
   const [productsMessage, setProductsMessage] = useState("");
   const [userInitial, setUserInitial] = useState("");
   const [userId, setUserId] = useState("");
+  const [userRole, setUserRole] = useState("");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [checkoutMessage, setCheckoutMessage] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -358,6 +361,28 @@ export default function HomePage() {
 
     loadProducts();
   }, []);
+
+  async function loadUserRole(accessToken) {
+    try {
+      const response = await fetch("/api/auth/rol", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setUserRole("");
+        return;
+      }
+
+      setUserRole(result.data.rol || "");
+    } catch (error) {
+      setUserRole("");
+    }
+  }
 
   async function loadCartFromSupabase(currentUserId) {
     const { data, error } = await supabase
@@ -413,10 +438,12 @@ export default function HomePage() {
       if (session?.user?.id && session?.user?.email) {
         setUserId(session.user.id);
         setUserInitial(session.user.email.charAt(0).toUpperCase());
+        await loadUserRole(session.access_token);
         await loadCartFromSupabase(session.user.id);
       } else {
         setUserId("");
         setUserInitial("");
+        setUserRole("");
         setCart({});
       }
     }
@@ -429,10 +456,12 @@ export default function HomePage() {
       if (session?.user?.id && session?.user?.email) {
         setUserId(session.user.id);
         setUserInitial(session.user.email.charAt(0).toUpperCase());
+        loadUserRole(session.access_token);
         loadCartFromSupabase(session.user.id);
       } else {
         setUserId("");
         setUserInitial("");
+        setUserRole("");
         setCart({});
       }
     });
@@ -649,7 +678,7 @@ export default function HomePage() {
 
       setCart({});
       setCheckoutLoading(false);
-      showCheckoutMessage("Compra realizada correctamente.");
+      window.location.href = `/checkout?orden_id=${result.data.orden_id}`;
     } catch (error) {
       setCheckoutLoading(false);
       showCheckoutMessage("No se pudo finalizar la compra.");
@@ -674,6 +703,7 @@ export default function HomePage() {
       <Header
         cartCount={totalItems}
         userInitial={userInitial}
+        userRole={userRole}
         onOpenCart={() => setIsCartOpen(true)}
       />
 
