@@ -1,8 +1,6 @@
 # Chronos Premium
 
-Chronos Premium es un e-commerce académico de relojes premium desarrollado para la materia Programación Web.
-
-El proyecto simula una tienda online con catálogo de productos, autenticación de usuarios, carrito persistente, órdenes de compra e historial de compras usando Next.js y Supabase.
+E-commerce full-stack de relojes premium desarrollado para la materia **Programación Web (71.38)**. Incluye autenticación, carrito persistente, órdenes con transacciones atómicas, integración con Mercado Pago y panel de administración.
 
 ## URL pública
 
@@ -132,3 +130,32 @@ Para correr el proyecto se necesitan las siguientes variables:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=
+MERCADOPAGO_ACCESS_TOKEN=
+NEXT_PUBLIC_APP_URL=
+```
+
+## Cómo correr localmente
+
+```bash
+npm install
+npm run dev
+```
+
+## Pagos — Mercado Pago Sandbox
+
+Para probar pagos en sandbox:
+1. Crear cuenta de prueba compradora en el panel de Mercado Pago Developers
+2. Iniciar sesión con esa cuenta en el checkout de Mercado Pago
+3. Usar dinero disponible de la cuenta de prueba
+
+## Entregables
+
+| Entregable | Estado |
+|---|---|
+| E1: Repo + CI/CD + preview | ✅ |
+| E2: Landing + vistas responsivas | ✅ |
+| E3: Formularios dinámicos + fetch | ✅ |
+| E4: Catálogo + API interna | ✅ |
+| E5: CRUD Supabase + admin | ✅ |
+| E6: Checkout + webhook Mercado Pago | ✅ |
