@@ -1,17 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function PagoFallidoPage() {
-  const [externalReference, setExternalReference] = useState("");
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setExternalReference(params.get("external_reference") || "");
-  }, []);
-
-  const ordenId = externalReference?.replace("orden_", "");
+function PagoFallidoContenido() {
+  const params = useSearchParams();
+  const externalReference = params.get("external_reference") || "";
+  const ordenId = externalReference.replace("orden_", "");
 
   return (
     <>
@@ -69,5 +65,13 @@ export default function PagoFallidoPage() {
         </section>
       </main>
     </>
+  );
+}
+
+export default function PagoFallidoPage() {
+  return (
+    <Suspense fallback={null}>
+      <PagoFallidoContenido />
+    </Suspense>
   );
 }

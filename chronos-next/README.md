@@ -16,6 +16,7 @@ https://pw-e-commerce-orcin.vercel.app
 - PostgreSQL
 - Supabase Auth
 - GitHub
+- GitHub Actions (CI)
 - Vercel
 
 ## Funcionalidades principales
@@ -141,6 +142,19 @@ NEXT_PUBLIC_APP_URL=
 npm install
 npm run dev
 ```
+
+## Base de datos
+
+El esquema, las funciones y las políticas de seguridad (RLS) están versionados en
+la carpeta [`db/`](db/). Para recrear la base en Supabase, ejecutar los scripts
+`.sql` en orden desde el SQL Editor (ver [`db/README.md`](db/README.md)).
+
+## Integración continua (CI)
+
+Cada push y cada Pull Request a `main` dispara un workflow de GitHub Actions
+([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) que instala
+dependencias, corre el linter y compila el proyecto. El deploy a producción lo
+hace Vercel automáticamente al mergear a `main`.
 
 ## Pagos — Mercado Pago Sandbox
 

@@ -9,7 +9,6 @@ export default function CheckoutPage() {
   const [sessionToken, setSessionToken] = useState("");
   const [loading, setLoading] = useState(true);
   const [paymentLoading, setPaymentLoading] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
 
@@ -110,49 +109,6 @@ export default function CheckoutPage() {
       setMessage("No se pudo preparar el pago.");
       setMessageType("error");
       setPaymentLoading(false);
-    }
-  }
-
-  async function confirmarPago() {
-    if (!orden || !sessionToken) return;
-
-    setConfirmLoading(true);
-    setMessage("");
-    setMessageType("");
-
-    try {
-      const response = await fetch("/api/pagos/confirmar", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${sessionToken}`
-        },
-        body: JSON.stringify({
-          orden_id: orden.id
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        setMessage(result.error || "No se pudo confirmar el pago.");
-        setMessageType("error");
-        setConfirmLoading(false);
-        return;
-      }
-
-      setOrden((prevOrden) => ({
-        ...prevOrden,
-        ...result.data.orden
-      }));
-
-      setMessage("Pago confirmado correctamente. La orden ahora figura como pagada.");
-      setMessageType("success");
-      setConfirmLoading(false);
-    } catch (error) {
-      setMessage("No se pudo confirmar el pago.");
-      setMessageType("error");
-      setConfirmLoading(false);
     }
   }
 

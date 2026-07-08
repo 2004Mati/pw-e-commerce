@@ -24,28 +24,30 @@ export async function POST(request) {
       return Response.json({ received: true }, { status: 200 });
     }
 
+    // Verificamos el pago consultando la API de Mercado Pago.
+    // Nunca confiamos en el estado que venga en el body de la notificación.
     const payment = new Payment(client);
     const paymentData = await payment.get({ id: paymentId });
 
-    if (paymentData.status !== "approved") {
-      return Response.json({ received: true }, { status: 200 });
-    }
-
     const externalReference = paymentData.external_reference;
+    const status = paymentData.status;
 
-    if (!externalReference) {
+    if (!externalReference || !status) {
       return Response.json({ received: true }, { status: 200 });
     }
 
-    const { data, error } = await supabase.rpc("confirmar_pago_externo", {
+    // Reflejamos el resultado real del pago en la orden:
+    // approved -> pagada | rejected/cancelled -> cancelada | pending/in_process -> pendiente
+    const { data, error } = await supabase.rpc("procesar_pago_mp", {
       p_external_reference: externalReference,
-      p_payment_id: String(paymentId)
+      p_payment_id: String(paymentId),
+      p_status: status
     });
 
     if (error) {
       console.error("[Webhook MP] Error RPC:", error);
     } else {
-      console.log("[Webhook MP] Orden actualizada:", data);
+      console.log(`[Webhook MP] Orden actualizada (status=${status}):`, data);
     }
 
     return Response.json({ received: true }, { status: 200 });
