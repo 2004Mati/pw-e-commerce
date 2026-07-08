@@ -21,6 +21,22 @@ export default function AdminPage() {
   const [ordenes, setOrdenes] = useState([]);
   const [actualizandoOrden, setActualizandoOrden] = useState(null);
 
+  async function cargarProductos(t) {
+    const res = await fetch("/api/admin/productos", {
+      headers: { Authorization: `Bearer ${t || token}` }
+    });
+    const data = await res.json();
+    if (data.success) setProductos(data.data);
+  }
+
+  async function cargarOrdenes(t) {
+    const res = await fetch("/api/admin/ordenes", {
+      headers: { Authorization: `Bearer ${t || token}` }
+    });
+    const data = await res.json();
+    if (data.success) setOrdenes(data.data);
+  }
+
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -45,23 +61,8 @@ export default function AdminPage() {
       setLoading(false);
     }
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  async function cargarProductos(t) {
-    const res = await fetch("/api/admin/productos", {
-      headers: { Authorization: `Bearer ${t || token}` }
-    });
-    const data = await res.json();
-    if (data.success) setProductos(data.data);
-  }
-
-  async function cargarOrdenes(t) {
-    const res = await fetch("/api/admin/ordenes", {
-      headers: { Authorization: `Bearer ${t || token}` }
-    });
-    const data = await res.json();
-    if (data.success) setOrdenes(data.data);
-  }
 
   function iniciarEdicion(p) {
     setEditando(p.id);

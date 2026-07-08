@@ -1,17 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function PagoCompletadoPage() {
-  const [paymentId, setPaymentId] = useState("");
-  const [externalReference, setExternalReference] = useState("");
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setPaymentId(params.get("payment_id") || "");
-    setExternalReference(params.get("external_reference") || "");
-  }, []);
+function PagoCompletadoContenido() {
+  const params = useSearchParams();
+  const paymentId = params.get("payment_id") || "";
+  const externalReference = params.get("external_reference") || "";
 
   return (
     <>
@@ -72,5 +68,13 @@ export default function PagoCompletadoPage() {
         </section>
       </main>
     </>
+  );
+}
+
+export default function PagoCompletadoPage() {
+  return (
+    <Suspense fallback={null}>
+      <PagoCompletadoContenido />
+    </Suspense>
   );
 }

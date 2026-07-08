@@ -1,15 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function PagoPendientePage() {
-  const [externalReference, setExternalReference] = useState("");
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setExternalReference(params.get("external_reference") || "");
-  }, []);
+function PagoPendienteContenido() {
+  const params = useSearchParams();
+  const externalReference = params.get("external_reference") || "";
 
   return (
     <>
@@ -57,5 +54,13 @@ export default function PagoPendientePage() {
         </section>
       </main>
     </>
+  );
+}
+
+export default function PagoPendientePage() {
+  return (
+    <Suspense fallback={null}>
+      <PagoPendienteContenido />
+    </Suspense>
   );
 }
