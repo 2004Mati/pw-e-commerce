@@ -8,9 +8,13 @@
 --
 -- Reemplaza a la antigua confirmar_pago_externo, que solo contemplaba pagos
 -- aprobados. Ahora se refleja cualquier resultado:
---    approved                                  -> pagada
---    rejected / cancelled / refunded / chargeback -> cancelada
---    pending / in_process / otros              -> pendiente
+--    approved                                      -> pagada
+--    rejected / cancelled / refunded / charged_back -> cancelada
+--    pending / in_process / otros                  -> pendiente
+--
+-- El UPDATE solo aplica si la orden sigue 'pendiente', de modo que un webhook
+-- duplicado o tardío no pueda pisar una orden ya finalizada (p. ej. cancelar
+-- una que ya estaba pagada).
 --
 -- SECURITY DEFINER: el webhook usa la anon key (sin sesión de usuario), por lo
 -- que la función corre con los permisos del owner para poder actualizar la
@@ -22,38 +26,45 @@ create or replace function public.procesar_pago_mp(
   p_payment_id text,
   p_status text
 )
-returns public.ordenes
+returns table(success boolean, nuevo_estado text, error_msg text)
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
   v_orden_id bigint;
-  v_estado   public.estado_orden;
-  v_orden    public.ordenes;
+  v_estado   text;
 begin
   -- external_reference tiene el formato 'orden_<id>'; extraemos solo los dígitos.
   v_orden_id := nullif(regexp_replace(p_external_reference, '\D', '', 'g'), '')::bigint;
 
   if v_orden_id is null then
-    return null;
+    return query select false, null::text, 'external_reference inválido'::text;
+    return;
   end if;
 
   -- Mapeo del estado de Mercado Pago al estado interno de la orden.
   v_estado := case
-    when p_status = 'approved' then 'pagada'::public.estado_orden
-    when p_status in ('rejected', 'cancelled', 'refunded', 'charged_back') then 'cancelada'::public.estado_orden
-    else 'pendiente'::public.estado_orden
+    when p_status = 'approved' then 'pagada'
+    when p_status in ('rejected', 'cancelled', 'refunded', 'charged_back') then 'cancelada'
+    else 'pendiente'
   end;
 
-  update public.ordenes
+  update ordenes
   set estado          = v_estado,
       referencia_pago = case when v_estado = 'pagada' then p_payment_id else referencia_pago end,
       pagado_en       = case when v_estado = 'pagada' then now() else pagado_en end
   where id = v_orden_id
-  returning * into v_orden;
+    and estado = 'pendiente';
 
-  return v_orden;
+  if found then
+    return query select true, v_estado, null::text;
+  else
+    return query select false, v_estado, 'Orden no encontrada o ya procesada'::text;
+  end if;
+
+exception when others then
+  return query select false, null::text, sqlerrm;
 end;
 $$;
 
