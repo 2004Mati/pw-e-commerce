@@ -271,9 +271,16 @@ drop policy if exists "Usuarios crean sus ordenes" on public.ordenes;
 create policy "Usuarios crean sus ordenes" on public.ordenes
   for insert with check (auth.uid() = usuario_id);
 
+-- Los usuarios solo pueden modificar sus órdenes PENDIENTES y sin cambiarles el
+-- estado (with check exige que la fila resultante siga 'pendiente'). Lo usa
+-- crear-preferencia para guardar metodo_pago/referencia_pago. Marcar una orden
+-- como pagada es exclusivo del webhook (procesar_pago_mp, SECURITY DEFINER).
 drop policy if exists "Usuarios pueden actualizar sus propias ordenes" on public.ordenes;
-create policy "Usuarios pueden actualizar sus propias ordenes" on public.ordenes
-  for update using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
+drop policy if exists "Usuarios actualizan sus ordenes pendientes" on public.ordenes;
+create policy "Usuarios actualizan sus ordenes pendientes" on public.ordenes
+  for update
+  using (auth.uid() = usuario_id and estado = 'pendiente')
+  with check (auth.uid() = usuario_id and estado = 'pendiente');
 
 drop policy if exists "Admins ven todas las ordenes" on public.ordenes;
 create policy "Admins ven todas las ordenes" on public.ordenes

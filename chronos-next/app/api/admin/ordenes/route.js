@@ -70,6 +70,17 @@ export async function GET(request) {
   }
 }
 
+// Los estados de pago (pendiente/pagada) los fija el sistema vía webhook de
+// Mercado Pago; el admin solo avanza el ciclo de la orden o la cancela.
+const TRANSICIONES = {
+  pendiente: ["cancelada"],
+  pagada: ["confirmada", "cancelada"],
+  confirmada: ["enviada", "cancelada"],
+  enviada: ["entregada"],
+  entregada: [],
+  cancelada: []
+};
+
 export async function PATCH(request) {
   try {
     const { supabase, error } = await verificarAdmin(request);
@@ -78,9 +89,27 @@ export async function PATCH(request) {
     const body = await request.json();
     const { id, estado } = body;
 
-    const estadosValidos = ["pendiente", "pagada", "confirmada", "enviada", "entregada", "cancelada"];
-    if (!id || !estadosValidos.includes(estado)) {
-      return errorResponse("ID y estado válido requeridos.", "INVALID_DATA", 400);
+    if (!id || !estado) {
+      return errorResponse("ID y estado requeridos.", "INVALID_DATA", 400);
+    }
+
+    const { data: ordenActual, error: buscarError } = await supabase
+      .from("ordenes")
+      .select("estado")
+      .eq("id", id)
+      .single();
+
+    if (buscarError || !ordenActual) {
+      return errorResponse("La orden no existe.", "ORDER_NOT_FOUND", 404);
+    }
+
+    const permitidos = TRANSICIONES[ordenActual.estado] || [];
+    if (!permitidos.includes(estado)) {
+      return errorResponse(
+        `No se puede pasar una orden de "${ordenActual.estado}" a "${estado}".`,
+        "INVALID_TRANSITION",
+        400
+      );
     }
 
     const { data, error: dbError } = await supabase

@@ -4,7 +4,16 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
-const ESTADOS = ["pendiente", "pagada", "confirmada", "enviada", "entregada", "cancelada"];
+// Transiciones que puede hacer el admin. Los estados de pago (pendiente/pagada)
+// los fija el webhook de Mercado Pago; acá solo se gestiona el ciclo de entrega.
+const TRANSICIONES = {
+  pendiente: ["cancelada"],
+  pagada: ["confirmada", "cancelada"],
+  confirmada: ["enviada", "cancelada"],
+  enviada: ["entregada"],
+  entregada: [],
+  cancelada: []
+};
 
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
@@ -192,7 +201,9 @@ export default function AdminPage() {
               {tab === "ordenes" && (
                 <div>
                   <h3 style={{ color: "#fff", marginBottom: "16px" }}>Gestión de órdenes</h3>
-                  {ordenes.map(o => (
+                  {ordenes.map(o => {
+                    const opciones = [o.estado, ...(TRANSICIONES[o.estado] || [])];
+                    return (
                     <div key={o.id} style={estiloCard}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
                         <div>
@@ -210,10 +221,10 @@ export default function AdminPage() {
                           <select
                             value={o.estado}
                             onChange={e => cambiarEstadoOrden(o.id, e.target.value)}
-                            disabled={actualizandoOrden === o.id}
+                            disabled={actualizandoOrden === o.id || opciones.length === 1}
                             style={{ background: "#1a1a1a", border: "1px solid #333", borderRadius: "8px", padding: "6px 10px", color: "#d4af37", cursor: "pointer" }}
                           >
-                            {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
+                            {opciones.map(e => <option key={e} value={e}>{e}</option>)}
                           </select>
 
                           <div style={{ fontSize: "0.8rem", color: "#555" }}>
@@ -224,7 +235,8 @@ export default function AdminPage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
